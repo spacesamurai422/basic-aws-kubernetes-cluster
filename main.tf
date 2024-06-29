@@ -167,6 +167,41 @@ variable "ssh_public_key" {
   default     = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC/ApCk3IJ1swt61tL9uD90jWLrDPf/rsSNoUKFUgSe9a0PaW2NZAcbV/mavuj8sFNxI9OjOe8Mlt9l49wIfs89llXU6qbm+cuVdWKFyfd2QyJGxIaPQzL5ZNbpXYaUy2QFQFiqNVyNDDJl466dIJnctxlloL1CkDMqhonPy39DjssXhFcaBbsfOM931zrVfiJ5pwn8Fp0IOOLfGeVuGv7qlZ7bVAGtEXiGcnPjJ8CSdtANUsHqfn74GsEVI3lsqEmUkhjGTDRbYGbsZODioKAdKam9dfu7JFK/VRWsjSNEouAYV8DflgLOAeFitdONGV/raBg0XonsWGyVV7bYTcmD root@Rajeshwers-MacBook-Air.local"
 }
 
+variable "ssh_private_key" {
+  description = "Private key for SSH access"
+  type        = string
+  default     = <<-EOF
+  -----BEGIN OPENSSH PRIVATE KEY-----
+  b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABFwAAAAdzc2gtcn
+  NhAAAAAwEAAQAAAQEAvwKQpNyCdbMLetbS/bg/dI1i6wz3/67EjaFChVIEnvWtD2ltjWQH
+  G1f5mr7o/LBTcSPToznvDJbfZePcCH7PPZZV1Oqm5vnLlXVihcn3dkMiRsSGj0My+WTW6V
+  2GlMtkBUBYqjVcjQwyZeOunSCZ3LcZZaC9QpAzKoaJz8t/Q47LF4RXGgW7HzjPd9c61X4i
+  eacJ/BadCDji3xnlbhr+6pWe21QBrRF4hnJz4yfAknbQDVLB6n5++BrBFSN5bKhJlJIYxk
+  w0W2Bm7GTg4qCgHSmpvXX7uyRSv1UVrI0jRKLgGFfA35YCzgHhYrXTjRlf62gYNF6J7Fhs
+  lVe22E3JgwAAA+CNil/zjYpf8wAAAAdzc2gtcnNhAAABAQC/ApCk3IJ1swt61tL9uD90jW
+  LrDPf/rsSNoUKFUgSe9a0PaW2NZAcbV/mavuj8sFNxI9OjOe8Mlt9l49wIfs89llXU6qbm
+  +cuVdWKFyfd2QyJGxIaPQzL5ZNbpXYaUy2QFQFiqNVyNDDJl466dIJnctxlloL1CkDMqho
+  nPy39DjssXhFcaBbsfOM931zrVfiJ5pwn8Fp0IOOLfGeVuGv7qlZ7bVAGtEXiGcnPjJ8CS
+  dtANUsHqfn74GsEVI3lsqEmUkhjGTDRbYGbsZODioKAdKam9dfu7JFK/VRWsjSNEouAYV8
+  DflgLOAeFitdONGV/raBg0XonsWGyVV7bYTcmDAAAAAwEAAQAAAQBkecrwjfYqR7agNWTj
+  hgoLG1yPXFEQNDS8c7l0PAKmQ4F3e/PezmFWpt5r4kTYt0ANYdUwJYdzzeFRzZyu81W8hd
+  o8l/qXwYqv4gGjcuwzT3k2VKabsbOcsMjEFSh4GM1SXdjGIC/BGktggXYWvVFyYvZ/GSC1
+  ZPklQ4Q2xEr7k7YaDGcTTZfSLfu2LlDFo044qq5PUzl3WuN30UT14OLwx3zfTZKPX3rJIP
+  DHSbejzbfXuTDUEO6hWjBmLDlsi3qwjD8QRC2ry5qR/10XlHwMNnq7hkTI86xUQwUg6Hbc
+  SrcOAOeEHPQJmQEfq2UFEG7J6APT/6ddxfEZX1WzqPdRAAAAgQCNPkhPWtl/70zmpk4ZjA
+  RKX3zCrwpnowj/sAa5a/mMi/Cr18xlmlsuYzSHxr9ZRWuRh41mIm2dB3s5BlcQVxH+kkaW
+  h5oO3GrKlUK6absALTrB8V99cWkob+FHtkJd6bvkYXbqmRZU6cL6sRaIqd70XeF5KLeBFI
+  dbYPkjRUnbLAAAAIEA8FfsW7qMsWJigTdi/CcF7IPHkR7xnvYTEBsGlt6vhSj6/QAJfwqQ
+  6gwMyoJ7Uxam8UU9hJH+TB7nrHSjlYZZk7L1i8XZKoufRHT5NasLl095FYMSP21n7XCZwt
+  nj3uEgHlUF6m1oeClWFq4i7u3SY632MllgdNFJkfVNGZ4mx30AAACBAMtz71yFQ/53grDl
+  Yf/yruVjyMGqzOpjUyysXdPJdjFIN6IHaZD9Sm9+KBoKnmLHcSX0lge05TrlXzUASfObaw
+  naXyvaPcuRZbCG0oYrd10CAjZR/xj/1cDHtEnO84cY5gu7+7NymuiuOlVyFBz7Mu+/Rex6
+  rr+98UrhRGjHNaT/AAAAJnJhamVzaHdlckBSYWplc2h3ZXJzLU1hY0Jvb2stQWlyLmxvY2
+  FsAQIDBA==
+  -----END OPENSSH PRIVATE KEY-----
+  EOF
+}
+
 resource "aws_key_pair" "shared_key" {
   key_name   = "shared_key"
   public_key = var.ssh_public_key
@@ -189,8 +224,10 @@ resource "aws_instance" "jumpbox" {
               #!/bin/bash
               sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
               systemctl restart sshd
-              echo "${var.ssh_public_key}" >> /root/.ssh/authorized_keys
-              chmod 600 /root/.ssh/authorized_keys
+              echo "${var.ssh_public_key}" >> /home/admin/.ssh/authorized_keys
+              echo "${var.ssh_private_key}" >> /home/admin/.ssh/shared_key
+              chmod 600 /home/admin/.ssh/authorized_keys
+              chmod 600 /home/admin/.ssh/shared_key
               apt-get update
               apt-get -y install wget curl vim openssl git
               cd /root
@@ -227,7 +264,7 @@ resource "aws_instance" "server" {
 
   user_data = <<-EOF
               #!/bin/bash
-              echo "${var.ssh_public_key}" >> /root/.ssh/authorized_keys
+              echo "${var.ssh_public_key}" >> /home/admin/.ssh/authorized_keys
               chmod 600 /root/.ssh/authorized_keys
               sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
               systemctl restart sshd
@@ -250,7 +287,7 @@ resource "aws_instance" "node-0" {
 
   user_data = <<-EOF
               #!/bin/bash
-              echo "${var.ssh_public_key}" >> /root/.ssh/authorized_keys
+              echo "${var.ssh_public_key}" >> /home/admin/.ssh/authorized_keys
               chmod 600 /root/.ssh/authorized_keys
               sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
               systemctl restart sshd
@@ -273,7 +310,7 @@ resource "aws_instance" "node-1" {
 
   user_data = <<-EOF
               #!/bin/bash
-              echo "${var.ssh_public_key}" >> /root/.ssh/authorized_keys
+              echo "${var.ssh_public_key}" >> /home/admin/.ssh/authorized_keys
               chmod 600 /root/.ssh/authorized_keys
               sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
               systemctl restart sshd

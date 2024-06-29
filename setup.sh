@@ -4,19 +4,19 @@ cd /root/kubernetes-the-hard-way
 
 #Fixing hostnames, hosts file
 while read IP FQDN HOST SUBNET; do
-    CMD="sed -i 's/^127.0.1.1.*/127.0.1.1\t${FQDN} ${HOST}/' /etc/hosts"
-    ssh -n root@${IP} "$CMD"
-    ssh -n root@${IP} hostnamectl hostname ${HOST}
+    CMD="sudo sed -i 's/^127.0.1.1.*/127.0.1.1\t${FQDN} ${HOST}/' /etc/hosts"
+    ssh -n admin@${IP} "$CMD"
+    ssh -n admin@${IP} sudo hostnamectl hostname ${HOST}
 done < machines.txt
 
 while read IP FQDN HOST SUBNET; do
     ENTRY="${IP} ${FQDN} ${HOST}"
-    echo $ENTRY >> /etc/hosts
+    echo $ENTRY | sudo tee -a /etc/hosts
 done < machines.txt
 
 while read IP FQDN HOST SUBNET; do
-  scp /etc/hosts root@${HOST}:~/
-  ssh -n root@${HOST} "cat hosts >> /etc/hosts"
+  scp /etc/hosts admin@${HOST}:~/
+  sudo -u admin ssh -n admin@${HOST} "cat hosts | sudo tee -a /etc/hosts"
 done < machines.txt
 
 #Provision CA and generate certs
@@ -41,15 +41,13 @@ done
 #Copy the certs and keys to appropriate servers
 
 for host in node-0 node-1; do
-  ssh root@$host mkdir /var/lib/kubelet/
+  ssh root@$host sudo mkdir /var/lib/kubelet/
 
   scp ca.crt root@$host:/var/lib/kubelet/
 
-  scp $host.crt \
-    root@$host:/var/lib/kubelet/kubelet.crt
+  scp $host.crt root@$host:/var/lib/kubelet/kubelet.crt
 
-  scp $host.key \
-    root@$host:/var/lib/kubelet/kubelet.key
+  scp $host.key root@$host:/var/lib/kubelet/kubelet.key
 done
 
 scp ca.key ca.crt kube-api-server.key kube-api-server.crt service-accounts.key service-accounts.crt root@server:~/
