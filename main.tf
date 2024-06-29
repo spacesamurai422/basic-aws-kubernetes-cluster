@@ -225,12 +225,16 @@ resource "aws_instance" "jumpbox" {
   user_data = <<-EOF
               #!/bin/bash
               sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+              sed -i 's/^#PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
+              sed -i 's/^#AuthorizedKeysFile.*/AuthorizedKeysFile .ssh\/authorized_keys/' /etc/ssh/sshd_config
               systemctl restart sshd
               echo "${var.ssh_public_key}" >> /home/admin/.ssh/authorized_keys
               echo "${var.ssh_private_key}" >> /home/admin/.ssh/shared_key
               echo "${var.ssh_private_key}" >> /root/.ssh/shared_key
+              chmod 700 /home/admin/.ssh
               chmod 600 /home/admin/.ssh/authorized_keys
               chmod 600 /home/admin/.ssh/shared_key
+              chown -R admin:admin /home/admin/.ssh
               chmod 600 /root/.ssh/shared_key
               apt-get update
               apt-get -y install wget curl vim openssl git
@@ -269,8 +273,12 @@ resource "aws_instance" "server" {
   user_data = <<-EOF
               #!/bin/bash
               echo "${var.ssh_public_key}" >> /home/admin/.ssh/authorized_keys
-              chmod 600 /root/.ssh/authorized_keys
+              chmod 600 /home/admin/.ssh/authorized_keys
+              chmod 700 /home/admin/.ssh
+              chown -R admin:admin /home/admin/.ssh
               sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+              sed -i 's/^#PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
+              sed -i 's/^#AuthorizedKeysFile.*/AuthorizedKeysFile .ssh\/authorized_keys/' /etc/ssh/sshd_config
               systemctl restart sshd
               EOF
 
@@ -292,8 +300,12 @@ resource "aws_instance" "node-0" {
   user_data = <<-EOF
               #!/bin/bash
               echo "${var.ssh_public_key}" >> /home/admin/.ssh/authorized_keys
-              chmod 600 /root/.ssh/authorized_keys
+              chmod 600 /home/admin/.ssh/authorized_keys
+              chmod 700 /home/admin/.ssh
+              chown -R admin:admin /home/admin/.ssh
               sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+              sed -i 's/^#PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
+              sed -i 's/^#AuthorizedKeysFile.*/AuthorizedKeysFile .ssh\/authorized_keys/' /etc/ssh/sshd_config
               systemctl restart sshd
               EOF
 
@@ -315,8 +327,12 @@ resource "aws_instance" "node-1" {
   user_data = <<-EOF
               #!/bin/bash
               echo "${var.ssh_public_key}" >> /home/admin/.ssh/authorized_keys
-              chmod 600 /root/.ssh/authorized_keys
+              chmod 600 /home/admin/.ssh/authorized_keys
+              chmod 700 /home/admin/.ssh
+              chown -R admin:admin /home/admin/.ssh
               sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+              sed -i 's/^#PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
+              sed -i 's/^#AuthorizedKeysFile.*/AuthorizedKeysFile .ssh\/authorized_keys/' /etc/ssh/sshd_config
               systemctl restart sshd
               EOF
 
