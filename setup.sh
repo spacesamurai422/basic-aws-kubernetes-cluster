@@ -41,13 +41,18 @@ done
 #Copy the certs and keys to appropriate servers
 
 for host in node-0 node-1; do
-  ssh root@$host sudo mkdir /var/lib/kubelet/
+  ssh admin@$host sudo mkdir /var/lib/kubelet/
 
-  scp ca.crt root@$host:/var/lib/kubelet/
+  scp ca.crt admin@$host:/tmp/
+  ssh admin@$host sudo mv /tmp/ca.crt /var/lib/kubelet/
 
-  scp $host.crt root@$host:/var/lib/kubelet/kubelet.crt
+  scp $host.crt admin@$host:/tmp/kubelet.crt
+  ssh admin@$host sudo mv /tmp/kubelet.crt /var/lib/kubelet/
 
-  scp $host.key root@$host:/var/lib/kubelet/kubelet.key
+
+  scp $host.key admin@$host:/tmp/kubelet.key
+  ssh admin@$host sudo mv /tmp/kubelet.key /var/lib/kubelet/
+
 done
 
 scp ca.key ca.crt kube-api-server.key kube-api-server.crt service-accounts.key service-accounts.crt root@server:~/

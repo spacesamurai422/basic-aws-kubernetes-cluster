@@ -229,13 +229,13 @@ resource "aws_instance" "jumpbox" {
               sed -i 's/^#AuthorizedKeysFile.*/AuthorizedKeysFile .ssh\/authorized_keys/' /etc/ssh/sshd_config
               systemctl restart sshd
               echo "${var.ssh_public_key}" >> /home/admin/.ssh/authorized_keys
-              echo "${var.ssh_private_key}" >> /home/admin/.ssh/shared_key
-              echo "${var.ssh_private_key}" >> /root/.ssh/shared_key
+              echo "${var.ssh_private_key}" >> /home/admin/.ssh/id_rsa
+              echo "${var.ssh_private_key}" >> /root/.ssh/id_rsa
               chmod 700 /home/admin/.ssh
               chmod 600 /home/admin/.ssh/authorized_keys
-              chmod 600 /home/admin/.ssh/shared_key
+              chmod 600 /home/admin/.ssh/id_rsa
               chown -R admin:admin /home/admin/.ssh
-              chmod 600 /root/.ssh/shared_key
+              chmod 600 /root/.ssh/id_rsa
               apt-get update
               apt-get -y install wget curl vim openssl git
               cd /root
