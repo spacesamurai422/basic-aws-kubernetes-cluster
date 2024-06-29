@@ -170,17 +170,17 @@ resource "aws_instance" "jumpbox" {
               #!/bin/bash
               apt-get update
               apt-get -y install wget curl vim openssl git
-              cd /root
-              echo "10.134.12.16 server.kubernetes.local server" >> /root/machines.txt
-              echo "10.134.12.17 node-0.kubernetes.local node-0 10.200.0.0/24" >> /root/machines.txt
-              echo "10.134.12.18 node-1.kubernetes.local node-1 10.200.1.0/24" >> /root/machines.txt
               git clone --depth 1 https://github.com/kelseyhightower/kubernetes-the-hard-way.git
-//            git clone https://github.com/spacesamurai422/basic-aws-kubernetes-cluster.git
+              cd /root/kubernetes-the-hard-way
+              echo "10.134.12.16 server.kubernetes.local server" >> /root/kubernetes-the-hard-way/machines.txt
+              echo "10.134.12.17 node-0.kubernetes.local node-0 10.200.0.0/24" >> /root/kubernetes-the-hard-way/machines.txt
+              echo "10.134.12.18 node-1.kubernetes.local node-1 10.200.1.0/24" >> /root/kubernetes-the-hard-way/machines.txt
               mkdir /root/kubernetes-the-hard-way/downloads
               wget -q --https-only --timestamping -P /root/kubernetes-the-hard-way/downloads -i /root/kubernetes-the-hard-way/downloads.txt
               chmod +x /root/kubernetes-the-hard-way/downloads/kubectl
               cp /root/kubernetes-the-hard-way/downloads/kubectl /usr/local/bin/
-              cp /root/.ssh/id_rsa.pub /root/basic-aws-kubernetes-cluster/
+              git clone https://github.com/spacesamurai422/basic-aws-kubernetes-cluster.git
+              nohup basic-aws-kubernetes-cluster/setup.sh > /root/setup_output.log 2>&1 &
               EOF
   tags = {
     Name = "jumpbox"
