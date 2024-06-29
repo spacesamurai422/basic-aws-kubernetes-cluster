@@ -1,10 +1,12 @@
+#!/bin/bash
+
 #Script that runs on the jumphost during first bootup to setup the environment
 
 cd /root/kubernetes-the-hard-way
 
 #Fixing hostnames, hosts file
 while read IP FQDN HOST SUBNET; do
-    CMD="sudo sed -i '/^127\.0\.0\.1/s/localhost/${FQDN} ${HOST}/' /etc/hosts"
+    CMD="sed -i 's/^127.0.1.1.*/127.0.1.1\t${FQDN} ${HOST}/' /etc/hosts" ##still not working
     ssh -o StrictHostKeyChecking=no -n admin@${IP} "$CMD"
     ssh -o StrictHostKeyChecking=no -n admin@${IP} sudo hostnamectl hostname ${HOST}
 done < machines.txt
@@ -49,4 +51,4 @@ for host in node-0 node-1; do
 
 done
 
-scp ca.key ca.crt kube-api-server.key kube-api-server.crt service-accounts.key service-accounts.crt root@server:~/
+scp ca.key ca.crt kube-api-server.key kube-api-server.crt service-accounts.key service-accounts.crt admin@server:~/
