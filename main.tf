@@ -213,6 +213,11 @@ resource "aws_instance" "jumpbox" {
   ami           = "ami-07564a05443c48891"
   instance_type = "t4g.nano"
   key_name = "shared_key"
+  depends_on = [
+    aws_instance.server,
+    aws_instance.node-0,
+    aws_instance.node-1
+  ]
   network_interface {
     network_interface_id = aws_network_interface.jumpbox.id
     device_index         = 0

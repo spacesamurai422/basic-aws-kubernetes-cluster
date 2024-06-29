@@ -4,9 +4,9 @@ cd /root/kubernetes-the-hard-way
 
 #Fixing hostnames, hosts file
 while read IP FQDN HOST SUBNET; do
-    CMD="sudo sed -i 's/^127.0.1.1.*/127.0.1.1\t${FQDN} ${HOST}/' /etc/hosts"
-    ssh -n admin@${IP} "$CMD"
-    ssh -n admin@${IP} sudo hostnamectl hostname ${HOST}
+    CMD="sudo sed -i '/^127\.0\.0\.1/s/localhost/${FQDN} ${HOST}/' /etc/hosts"
+    ssh -o StrictHostKeyChecking=no -n admin@${IP} "$CMD"
+    ssh -o StrictHostKeyChecking=no -n admin@${IP} sudo hostnamectl hostname ${HOST}
 done < machines.txt
 
 while read IP FQDN HOST SUBNET; do
@@ -15,8 +15,8 @@ while read IP FQDN HOST SUBNET; do
 done < machines.txt
 
 while read IP FQDN HOST SUBNET; do
-  scp /etc/hosts admin@${HOST}:~/
-  ssh -n admin@${HOST} "cat hosts | sudo tee -a /etc/hosts"
+  scp -o StrictHostKeyChecking=no /etc/hosts admin@${HOST}:~/
+  ssh -o StrictHostKeyChecking=no -n admin@${HOST} "cat hosts | sudo tee -a /etc/hosts"
 done < machines.txt
 
 #Provision CA and generate certs
@@ -24,13 +24,7 @@ done < machines.txt
 openssl genrsa -out ca.key 4096
 openssl req -x509 -new -sha512 -noenc -key ca.key -days 3653 -config ca.conf -out ca.crt
 
-certs=(
-  "admin" "node-0" "node-1"
-  "kube-proxy" "kube-scheduler"
-  "kube-controller-manager"
-  "kube-api-server"
-  "service-accounts"
-)
+certs=("admin" "node-0" "node-1" "kube-proxy" "kube-scheduler" "kube-controller-manager" "kube-api-server" "service-accounts")
 
 for i in ${certs[*]}; do
   openssl genrsa -out "${i}.key" 4096
@@ -41,13 +35,13 @@ done
 #Copy the certs and keys to appropriate servers
 
 for host in node-0 node-1; do
-  ssh admin@$host sudo mkdir /var/lib/kubelet/
+  ssh -o StrictHostKeyChecking=no admin@$host sudo mkdir /var/lib/kubelet/
 
-  scp ca.crt admin@$host:/tmp/
-  ssh admin@$host sudo mv /tmp/ca.crt /var/lib/kubelet/
+  scp -o StrictHostKeyChecking=no ca.crt admin@$host:/tmp/
+  ssh -o StrictHostKeyChecking=no admin@$host sudo mv /tmp/ca.crt /var/lib/kubelet/
 
-  scp $host.crt admin@$host:/tmp/kubelet.crt
-  ssh admin@$host sudo mv /tmp/kubelet.crt /var/lib/kubelet/
+  scp -o StrictHostKeyChecking=no $host.crt admin@$host:/tmp/kubelet.crt
+  ssh -o StrictHostKeyChecking=no admin@$host sudo mv /tmp/kubelet.crt /var/lib/kubelet/
 
 
   scp $host.key admin@$host:/tmp/kubelet.key
