@@ -65,6 +65,10 @@ resource "aws_subnet" "my_subnet" {
   }
 }
 
+resource "aws_eip" "jumpbox_eip" {
+  vpc = true
+}
+
 resource "aws_network_interface" "jumpbox" {
   subnet_id   = aws_subnet.my_subnet.id
   private_ips = ["10.134.12.15"]
@@ -73,6 +77,11 @@ resource "aws_network_interface" "jumpbox" {
   tags = {
     Name = "jumpbox primary nw"
   }
+}
+
+resource "aws_eip_association" "jumpbox_eip_assoc" {
+  network_interface_id = aws_network_interface.jumpbox.id
+  allocation_id        = aws_eip.jumpbox_eip.id
 }
 
 resource "aws_network_interface" "server" {
@@ -153,23 +162,38 @@ resource "aws_volume_attachment" "node-1_ebs_att" {
 
 //Instances
 
+variable "ssh_public_key" {
+  description = "Public key for SSH access"
+  default     = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC/ApCk3IJ1swt61tL9uD90jWLrDPf/rsSNoUKFUgSe9a0PaW2NZAcbV/mavuj8sFNxI9OjOe8Mlt9l49wIfs89llXU6qbm+cuVdWKFyfd2QyJGxIaPQzL5ZNbpXYaUy2QFQFiqNVyNDDJl466dIJnctxlloL1CkDMqhonPy39DjssXhFcaBbsfOM931zrVfiJ5pwn8Fp0IOOLfGeVuGv7qlZ7bVAGtEXiGcnPjJ8CSdtANUsHqfn74GsEVI3lsqEmUkhjGTDRbYGbsZODioKAdKam9dfu7JFK/VRWsjSNEouAYV8DflgLOAeFitdONGV/raBg0XonsWGyVV7bYTcmD root@Rajeshwers-MacBook-Air.local"
+}
+
+resource "aws_key_pair" "shared_key" {
+  key_name   = "shared_key"
+  public_key = var.ssh_public_key
+}
+
 resource "aws_instance" "jumpbox" {
   ami           = "ami-07564a05443c48891"
   instance_type = "t4g.nano"
-  key_name = "new"
+  key_name = "shared_key"
   network_interface {
     network_interface_id = aws_network_interface.jumpbox.id
     device_index         = 0
   }
-  associate_public_ip_address = true  # Automatically assign a public IP
+
   root_block_device {
     volume_size = 10
     volume_type = "gp3"
   }
   user_data = <<-EOF
               #!/bin/bash
+              sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+              systemctl restart sshd
+              echo "${var.ssh_public_key}" >> /root/.ssh/authorized_keys
+              chmod 600 /root/.ssh/authorized_keys
               apt-get update
               apt-get -y install wget curl vim openssl git
+              cd /root
               git clone --depth 1 https://github.com/kelseyhightower/kubernetes-the-hard-way.git
               cd /root/kubernetes-the-hard-way
               echo "10.134.12.16 server.kubernetes.local server" >> /root/kubernetes-the-hard-way/machines.txt
@@ -180,7 +204,8 @@ resource "aws_instance" "jumpbox" {
               chmod +x /root/kubernetes-the-hard-way/downloads/kubectl
               cp /root/kubernetes-the-hard-way/downloads/kubectl /usr/local/bin/
               git clone https://github.com/spacesamurai422/basic-aws-kubernetes-cluster.git
-              nohup basic-aws-kubernetes-cluster/setup.sh > /root/setup_output.log 2>&1 &
+              chmod +x /root/kubernetes-the-hard-way/basic-aws-kubernetes-cluster/setup.sh
+              nohup /root/kubernetes-the-hard-way/basic-aws-kubernetes-cluster/setup.sh > /root/setup_output.log 2>&1 &
               EOF
   tags = {
     Name = "jumpbox"
@@ -190,7 +215,7 @@ resource "aws_instance" "jumpbox" {
 resource "aws_instance" "server" {
   ami           = "ami-07564a05443c48891"
   instance_type = "t4g.small"
-  key_name = "new"
+  key_name = "shared_key"
   network_interface {
     network_interface_id = aws_network_interface.server.id
     device_index         = 0
@@ -202,6 +227,8 @@ resource "aws_instance" "server" {
 
   user_data = <<-EOF
               #!/bin/bash
+              echo "${var.ssh_public_key}" >> /root/.ssh/authorized_keys
+              chmod 600 /root/.ssh/authorized_keys
               sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
               systemctl restart sshd
               EOF
@@ -214,7 +241,7 @@ resource "aws_instance" "server" {
 resource "aws_instance" "node-0" {
   ami           = "ami-07564a05443c48891"
   instance_type = "t4g.micro"
-  key_name = "new"
+  key_name = "shared_key"
 
   network_interface {
     network_interface_id = aws_network_interface.node-0.id
@@ -223,6 +250,8 @@ resource "aws_instance" "node-0" {
 
   user_data = <<-EOF
               #!/bin/bash
+              echo "${var.ssh_public_key}" >> /root/.ssh/authorized_keys
+              chmod 600 /root/.ssh/authorized_keys
               sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
               systemctl restart sshd
               EOF
@@ -235,7 +264,7 @@ resource "aws_instance" "node-0" {
 resource "aws_instance" "node-1" {
   ami           = "ami-07564a05443c48891"
   instance_type = "t4g.micro"
-  key_name = "new"
+  key_name = "shared_key"
 
   network_interface {
     network_interface_id = aws_network_interface.node-1.id
@@ -244,6 +273,8 @@ resource "aws_instance" "node-1" {
 
   user_data = <<-EOF
               #!/bin/bash
+              echo "${var.ssh_public_key}" >> /root/.ssh/authorized_keys
+              chmod 600 /root/.ssh/authorized_keys
               sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
               systemctl restart sshd
               EOF

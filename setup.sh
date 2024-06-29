@@ -2,13 +2,7 @@
 
 cd /root/kubernetes-the-hard-way
 
-#Fixing hostnames, hosts file and ssh connectivity
-ssh-keygen -q -t rsa -N "" -f /root/.ssh/id_rsa
-
-while read IP FQDN HOST SUBNET; do
-  ssh-copy-id root@${IP}
-done < machines.txt
-
+#Fixing hostnames, hosts file
 while read IP FQDN HOST SUBNET; do
     CMD="sed -i 's/^127.0.1.1.*/127.0.1.1\t${FQDN} ${HOST}/' /etc/hosts"
     ssh -n root@${IP} "$CMD"
