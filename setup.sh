@@ -16,7 +16,7 @@ done < machines.txt
 
 while read IP FQDN HOST SUBNET; do
   scp /etc/hosts admin@${HOST}:~/
-  sudo -u admin ssh -n admin@${HOST} "cat hosts | sudo tee -a /etc/hosts"
+  ssh -n admin@${HOST} "cat hosts | sudo tee -a /etc/hosts"
 done < machines.txt
 
 #Provision CA and generate certs

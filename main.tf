@@ -97,6 +97,7 @@ resource "aws_network_interface" "server" {
 resource "aws_network_interface" "node-0" {
   subnet_id   = aws_subnet.my_subnet.id
   private_ips = ["10.134.12.17"]
+  security_groups = [aws_security_group.my_group.id]
 
   tags = {
     Name = "node-0 primary nw"
@@ -106,6 +107,7 @@ resource "aws_network_interface" "node-0" {
 resource "aws_network_interface" "node-1" {
   subnet_id   = aws_subnet.my_subnet.id
   private_ips = ["10.134.12.18"]
+  security_groups = [aws_security_group.my_group.id]
 
   tags = {
     Name = "node-1 primary nw"
@@ -226,8 +228,10 @@ resource "aws_instance" "jumpbox" {
               systemctl restart sshd
               echo "${var.ssh_public_key}" >> /home/admin/.ssh/authorized_keys
               echo "${var.ssh_private_key}" >> /home/admin/.ssh/shared_key
+              echo "${var.ssh_private_key}" >> /root/.ssh/shared_key
               chmod 600 /home/admin/.ssh/authorized_keys
               chmod 600 /home/admin/.ssh/shared_key
+              chmod 600 /root/.ssh/shared_key
               apt-get update
               apt-get -y install wget curl vim openssl git
               cd /root
