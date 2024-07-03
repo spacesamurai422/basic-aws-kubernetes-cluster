@@ -6,9 +6,9 @@ cd /root/kubernetes-the-hard-way
 
 #Fixing hostnames, hosts file
 while read IP FQDN HOST SUBNET; do
-    CMD="sed -i 's/^127.0.1.1.*/127.0.1.1\t${FQDN} ${HOST}/' /etc/hosts" ##still not working
-    ssh -o StrictHostKeyChecking=no -n admin@${IP} "$CMD"
-    ssh -o StrictHostKeyChecking=no -n admin@${IP} sudo hostnamectl hostname ${HOST}
+    #CMD="sed -i 's/^127.0.1.1.*/127.0.1.1\t${FQDN} ${HOST}/' /etc/hosts" ##still not working
+    ssh -o StrictHostKeyChecking=no -n admin@"${IP}" "sudo sed -i 's/^127.0.1.1.*/127.0.1.1\t${FQDN} ${HOST}/' /etc/hosts"
+    ssh -o StrictHostKeyChecking=no -n admin@"${IP}" sudo hostnamectl hostname ${HOST}
 done < machines.txt
 
 while read IP FQDN HOST SUBNET; do
