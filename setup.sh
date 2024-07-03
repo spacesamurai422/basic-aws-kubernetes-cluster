@@ -7,8 +7,9 @@ cd /root/kubernetes-the-hard-way
 #Fixing hostnames, hosts file
 while read IP FQDN HOST SUBNET; do
     #CMD="sed -i 's/^127.0.1.1.*/127.0.1.1\t${FQDN} ${HOST}/' /etc/hosts" ##still not working
-    ssh -o StrictHostKeyChecking=no -n admin@"${IP}" "sudo sed -i 's/^127.0.1.1.*/127.0.1.1\t${FQDN} ${HOST}/' /etc/hosts"
-    ssh -o StrictHostKeyChecking=no -n admin@"${IP}" sudo hostnamectl hostname ${HOST}
+    sudo sed -i '/^127\.0\.0\.1/c\127.0.0.1 ${FQDN} ${HOST}' /etc/hosts
+    ssh -o StrictHostKeyChecking=no -n admin@${IP} sudo sed -i '/^127\.0\.0\.1/c\127.0.0.1 ${FQDN} ${HOST}' /etc/hosts
+    ssh -o StrictHostKeyChecking=no -n admin@${IP} sudo hostnamectl hostname ${HOST}
 done < machines.txt
 
 while read IP FQDN HOST SUBNET; do
@@ -178,5 +179,57 @@ scp admin.kubeconfig kube-controller-manager.kubeconfig kube-scheduler.kubeconfi
 
 #Generate encryption config
 export ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
-envsubst < configs/encryption-config.yaml > encryption-config.yaml
+envsubst < basic-aws-kubernetes-cluster/encryption-config.yaml > encryption-config.yaml
 scp encryption-config.yaml admin@server:/tmp
+
+#Bootstrap etcd on server
+scp downloads/etcd-v3.4.27-linux-arm64.tar.gz units/etcd.service admin@server:/tmp
+ssh -o StrictHostKeyChecking=no admin@server sudo tar -xvf etcd-v3.4.27-linux-arm64.tar.gz
+ssh -o StrictHostKeyChecking=no admin@server sudo mv /tmp/etcd-v3.4.27-linux-arm64/etcd* /usr/local/bin/
+ssh -o StrictHostKeyChecking=no admin@server sudo mkdir -p /etc/etcd /var/lib/etcd
+ssh -o StrictHostKeyChecking=no admin@server sudo chmod 700 /var/lib/etcd
+ssh -o StrictHostKeyChecking=no admin@server sudo cp /tmp/ca.crt /tmp/kube-api-server.key /tmp/kube-api-server.crt /etc/etcd/
+ssh -o StrictHostKeyChecking=no admin@server sudo mv /tmp/etcd.service /etc/systemd/system/
+ssh -o StrictHostKeyChecking=no admin@server sudo systemctl daemon-reload
+ssh -o StrictHostKeyChecking=no admin@server sudo systemctl enable etcd
+ssh -o StrictHostKeyChecking=no admin@server sudo systemctl start etcd
+etcdctl member list
+
+#Bootstrap the control plane server - api server, scheduler, controller manager
+scp \
+  downloads/kube-apiserver \
+  downloads/kube-controller-manager \
+  downloads/kube-scheduler \
+  downloads/kubectl \
+  units/kube-apiserver.service \
+  units/kube-controller-manager.service \
+  units/kube-scheduler.service \
+  configs/kube-scheduler.yaml \
+  configs/kube-apiserver-to-kubelet.yaml \
+  admin@server:/tmp
+
+ssh -o StrictHostKeyChecking=no admin@server sudo mkdir -p /etc/kubernetes/config
+ssh -o StrictHostKeyChecking=no admin@server sudo chmod +x /tmp/kube-apiserver /tmp/kube-controller-manager /tmp/kube-scheduler /tmp/kubectl
+ssh -o StrictHostKeyChecking=no admin@server sudo mv /tmp/kube-apiserver /tmp/kube-controller-manager /tmp/kube-scheduler /tmp/kubectl /usr/local/bin/
+
+
+#Configure kubernetes api server, controller manager and scheduler
+ssh -o StrictHostKeyChecking=no admin@server sudo mkdir -p /var/lib/kubernetes/
+ssh -o StrictHostKeyChecking=no admin@server sudo mv /tmp/ca.crt /tmp/ca.key /tmp/kube-api-server.key /tmp/kube-api-server.crt /tmp/service-accounts.key /tmp/service-accounts.crt /tmp/encryption-config.yaml /var/lib/kubernetes/
+ssh -o StrictHostKeyChecking=no admin@server sudo mv /tmp/kube-apiserver.service /etc/systemd/system/kube-apiserver.service
+
+ssh -o StrictHostKeyChecking=no admin@server sudo mv /tmp/kube-controller-manager.kubeconfig /var/lib/kubernetes/
+ssh -o StrictHostKeyChecking=no admin@server sudo mv /tmp/kube-controller-manager.service /etc/systemd/system/
+
+ssh -o StrictHostKeyChecking=no admin@server sudo mv /tmp/kube-scheduler.kubeconfig /var/lib/kubernetes/
+ssh -o StrictHostKeyChecking=no admin@server sudo mv /tmp/kube-scheduler.service /etc/systemd/system/
+ssh -o StrictHostKeyChecking=no admin@server sudo mv /tmp/kube-scheduler.yaml /etc/kubernetes/config/
+
+#Start control plane services
+ssh -o StrictHostKeyChecking=no admin@server sudo systemctl daemon-reload
+ssh -o StrictHostKeyChecking=no admin@server sudo systemctl enable kube-apiserver kube-controller-manager kube-scheduler
+ssh -o StrictHostKeyChecking=no admin@server sudo systemctl start kube-apiserver kube-controller-manager kube-scheduler
+ssh -o StrictHostKeyChecking=no admin@server sudo kubectl cluster-info --kubeconfig /tmp/admin.kubeconfig
+
+
+
