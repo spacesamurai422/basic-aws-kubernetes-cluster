@@ -183,7 +183,7 @@ scp -o StrictHostKeyChecking=no encryption-config.yaml admin@server:/tmp
 
 #Bootstrap etcd on server
 scp -o StrictHostKeyChecking=no downloads/etcd-v3.4.27-linux-arm64.tar.gz units/etcd.service admin@server:/tmp
-ssh -o StrictHostKeyChecking=no admin@server sudo tar -xvf etcd-v3.4.27-linux-arm64.tar.gz
+ssh -o StrictHostKeyChecking=no admin@server sudo tar -xvf /tmp/etcd-v3.4.27-linux-arm64.tar.gz
 ssh -o StrictHostKeyChecking=no admin@server sudo mv /tmp/etcd-v3.4.27-linux-arm64/etcd* /usr/local/bin/
 ssh -o StrictHostKeyChecking=no admin@server sudo mkdir -p /etc/etcd /var/lib/etcd
 ssh -o StrictHostKeyChecking=no admin@server sudo chmod 700 /var/lib/etcd
