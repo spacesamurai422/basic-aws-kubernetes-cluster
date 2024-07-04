@@ -7,8 +7,8 @@ cd /root/kubernetes-the-hard-way
 #Fixing hostnames, hosts file
 while read IP FQDN HOST SUBNET; do
     #CMD="sed -i 's/^127.0.1.1.*/127.0.1.1\t${FQDN} ${HOST}/' /etc/hosts" ##still not working
-    sudo sed -i '/^127\.0\.0\.1/c\127.0.0.1 ${FQDN} ${HOST}' /etc/hosts
-    ssh -o StrictHostKeyChecking=no -n admin@${IP} sudo sed -i '/^127\.0\.0\.1/c\127.0.0.1 ${FQDN} ${HOST}' /etc/hosts
+    sudo sed -i "/^127\.0\.0\.1/c\127.0.0.1 ${FQDN} ${HOST}" /etc/hosts
+    ssh -o StrictHostKeyChecking=no -n admin@${IP} sudo sed -i "/^127\.0\.0\.1/c\127.0.0.1 ${FQDN} ${HOST}" /etc/hosts
     ssh -o StrictHostKeyChecking=no -n admin@${IP} sudo hostnamectl hostname ${HOST}
 done < machines.txt
 
@@ -229,6 +229,63 @@ ssh -o StrictHostKeyChecking=no admin@server sudo systemctl daemon-reload
 ssh -o StrictHostKeyChecking=no admin@server sudo systemctl enable kube-apiserver kube-controller-manager kube-scheduler
 ssh -o StrictHostKeyChecking=no admin@server sudo systemctl start kube-apiserver kube-controller-manager kube-scheduler
 ssh -o StrictHostKeyChecking=no admin@server sudo kubectl cluster-info --kubeconfig /tmp/admin.kubeconfig
+#Configure RBAC permissions to allow kubernetes API Server to access the Kubelet API on worker nodes
+ssh -o StrictHostKeyChecking=no admin@server sudo kubectl apply -f /tmp/kube-apiserver-to-kubelet.yaml --kubeconfig /tmp/admin.kubeconfig
+sudo curl -k --cacert /root/kubernetes-the-hard-way/ca.crt https://server.kubernetes.local:6443/version
 
+#Bootstrap worker nodes
 
+for host in node-0 node-1; do
+  SUBNET=$(grep $host machines.txt | cut -d " " -f 4)
+  sed "s|SUBNET|$SUBNET|g" configs/10-bridge.conf > 10-bridge.conf
+  sed "s|SUBNET|$SUBNET|g" configs/kubelet-config.yaml > kubelet-config.yaml
+  scp 10-bridge.conf kubelet-config.yaml admin@$host:/tmp
+done
 
+for host in node-0 node-1; do
+  scp \
+    downloads/runc.arm64 \
+    downloads/crictl-v1.28.0-linux-arm.tar.gz \
+    downloads/cni-plugins-linux-arm64-v1.3.0.tgz \
+    downloads/containerd-1.7.8-linux-arm64.tar.gz \
+    downloads/kubectl \
+    downloads/kubelet \
+    downloads/kube-proxy \
+    configs/99-loopback.conf \
+    configs/containerd-config.toml \
+    configs/kubelet-config.yaml \
+    configs/kube-proxy-config.yaml \
+    units/containerd.service \
+    units/kubelet.service \
+    units/kube-proxy.service \
+    admin@$host:/tmp
+done
+
+for host in node-0 node-1; do
+  ssh -o StrictHostKeyChecking=no admin@$host sudo apt-get update
+  ssh -o StrictHostKeyChecking=no admin@$host sudo apt-get -y install socat conntrack ipset
+  ssh -o StrictHostKeyChecking=no admin@$host sudo swapoff -a
+  ssh -o StrictHostKeyChecking=no admin@$host sudo mkdir -p /etc/cni/net.d /opt/cni/bin /var/lib/kubelet /var/lib/kube-proxy /var/lib/kubernetes /var/run/kubernetes
+  ssh -o StrictHostKeyChecking=no admin@$host sudo mkdir -p containerd
+  ssh -o StrictHostKeyChecking=no admin@$host sudo tar -xvf crictl-v1.28.0-linux-arm.tar.gz -C /tmp
+  ssh -o StrictHostKeyChecking=no admin@$host sudo tar -xvf containerd-1.7.8-linux-arm64.tar.gz -C containerd -C /tmp
+  ssh -o StrictHostKeyChecking=no admin@$host sudo tar -xvf cni-plugins-linux-arm64-v1.3.0.tgz -C /opt/cni/bin/ -C /tmp
+  ssh -o StrictHostKeyChecking=no admin@$host sudo mv /tmp/runc.arm64 /tmp/runc
+  ssh -o StrictHostKeyChecking=no admin@$host sudo chmod +x /tmp/crictl /tmp/kubectl /tmp/kube-proxy /tmp/kubelet /tmp/runc
+  ssh -o StrictHostKeyChecking=no admin@$host sudo mv /tmp/crictl /tmp/kubectl /tmp/kube-proxy /tmp/kubelet /tmp/runc /usr/local/bin/
+  ssh -o StrictHostKeyChecking=no admin@$host sudo mv /tmp/containerd/bin/* /bin/
+  ssh -o StrictHostKeyChecking=no admin@$host sudo mv /tmp/10-bridge.conf /tmp/99-loopback.conf /etc/cni/net.d/
+  ssh -o StrictHostKeyChecking=no admin@$host sudo mkdir -p /etc/containerd/
+  ssh -o StrictHostKeyChecking=no admin@$host sudo mv /tmp/containerd-config.toml /etc/containerd/config.toml
+  ssh -o StrictHostKeyChecking=no admin@$host sudo mv /tmp/containerd.service /etc/systemd/system/
+  ssh -o StrictHostKeyChecking=no admin@$host sudo mv /tmp/kubelet-config.yaml /var/lib/kubelet/
+  ssh -o StrictHostKeyChecking=no admin@$host sudo mv /tmp/kubelet.service /etc/systemd/system/
+  ssh -o StrictHostKeyChecking=no admin@$host sudo mv /tmp/kube-proxy-config.yaml /var/lib/kube-proxy/
+  ssh -o StrictHostKeyChecking=no admin@$host sudo mv /tmp/kube-proxy.service /etc/systemd/system/
+  ssh -o StrictHostKeyChecking=no admin@$host sudo systemctl daemon-reload
+  ssh -o StrictHostKeyChecking=no admin@$host sudo systemctl enable containerd kubelet kube-proxy
+  ssh -o StrictHostKeyChecking=no admin@$host sudo systemctl start containerd kubelet kube-proxy
+done
+
+#Verify node status
+kubectl get nodes --kubeconfig /tmp/admin.kubeconfig
