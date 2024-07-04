@@ -285,6 +285,8 @@ resource "aws_instance" "server" {
               sed -i 's/^#PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
               sed -i 's/^#AuthorizedKeysFile.*/AuthorizedKeysFile .ssh\/authorized_keys/' /etc/ssh/sshd_config
               systemctl restart sshd
+              apt-get update
+              apt-get install socat conntrack ipset
               EOF
 
   tags = {
@@ -312,6 +314,8 @@ resource "aws_instance" "node-0" {
               sed -i 's/^#PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
               sed -i 's/^#AuthorizedKeysFile.*/AuthorizedKeysFile .ssh\/authorized_keys/' /etc/ssh/sshd_config
               systemctl restart sshd
+              apt-get update
+              apt-get install socat conntrack ipset
               EOF
 
   tags = {
@@ -339,6 +343,8 @@ resource "aws_instance" "node-1" {
               sed -i 's/^#PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
               sed -i 's/^#AuthorizedKeysFile.*/AuthorizedKeysFile .ssh\/authorized_keys/' /etc/ssh/sshd_config
               systemctl restart sshd
+              apt-get update
+              apt-get install socat conntrack ipset
               EOF
 
   tags = {

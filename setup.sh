@@ -262,14 +262,14 @@ for host in node-0 node-1; do
 done
 
 for host in node-0 node-1; do
-  ssh -o StrictHostKeyChecking=no admin@$host sudo apt-get update
-  ssh -o StrictHostKeyChecking=no admin@$host sudo apt-get -y install socat conntrack ipset
+#  ssh -o StrictHostKeyChecking=no admin@$host sudo apt-get update -> doing it in user_data
+#  ssh -o StrictHostKeyChecking=no admin@$host sudo apt-get -y install socat conntrack ipset -> doing it in user_data
   ssh -o StrictHostKeyChecking=no admin@$host sudo swapoff -a
   ssh -o StrictHostKeyChecking=no admin@$host sudo mkdir -p /etc/cni/net.d /opt/cni/bin /var/lib/kubelet /var/lib/kube-proxy /var/lib/kubernetes /var/run/kubernetes
-  ssh -o StrictHostKeyChecking=no admin@$host sudo mkdir -p containerd
+  ssh -o StrictHostKeyChecking=no admin@$host sudo mkdir -p /tmp/containerd
   ssh -o StrictHostKeyChecking=no admin@$host sudo tar -xvf crictl-v1.28.0-linux-arm.tar.gz -C /tmp
-  ssh -o StrictHostKeyChecking=no admin@$host sudo tar -xvf containerd-1.7.8-linux-arm64.tar.gz -C containerd -C /tmp
-  ssh -o StrictHostKeyChecking=no admin@$host sudo tar -xvf cni-plugins-linux-arm64-v1.3.0.tgz -C /opt/cni/bin/ -C /tmp
+  ssh -o StrictHostKeyChecking=no admin@$host sudo tar -xvf containerd-1.7.8-linux-arm64.tar.gz -C /tmp/containerd
+  ssh -o StrictHostKeyChecking=no admin@$host sudo tar -xvf cni-plugins-linux-arm64-v1.3.0.tgz -C /opt/cni/bin/
   ssh -o StrictHostKeyChecking=no admin@$host sudo mv /tmp/runc.arm64 /tmp/runc
   ssh -o StrictHostKeyChecking=no admin@$host sudo chmod +x /tmp/crictl /tmp/kubectl /tmp/kube-proxy /tmp/kubelet /tmp/runc
   ssh -o StrictHostKeyChecking=no admin@$host sudo mv /tmp/crictl /tmp/kubectl /tmp/kube-proxy /tmp/kubelet /tmp/runc /usr/local/bin/
