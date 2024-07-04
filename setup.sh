@@ -46,13 +46,12 @@ for host in node-0 node-1; do
   scp -o StrictHostKeyChecking=no $host.crt admin@$host:/tmp/kubelet.crt
   ssh -o StrictHostKeyChecking=no admin@$host sudo mv /tmp/kubelet.crt /var/lib/kubelet/
 
-
-  scp $host.key admin@$host:/tmp/kubelet.key
-  ssh admin@$host sudo mv /tmp/kubelet.key /var/lib/kubelet/
+  scp -o StrictHostKeyChecking=no $host.key admin@$host:/tmp/kubelet.key
+  ssh -o StrictHostKeyChecking=no admin@$host sudo mv /tmp/kubelet.key /var/lib/kubelet/
 
 done
 
-scp ca.key ca.crt kube-api-server.key kube-api-server.crt service-accounts.key service-accounts.crt admin@server:/tmp
+scp -o StrictHostKeyChecking=no ca.key ca.crt kube-api-server.key kube-api-server.crt service-accounts.key service-accounts.crt admin@server:/tmp
 
 #Generate kubeconfig files
 
@@ -165,7 +164,7 @@ kubectl config use-context default \
 
 #Copy the kubelet and kube-proxy configs to their respective nodes
 for host in node-0 node-1; do
-  ssh admin@$host "sudo mkdir /var/lib/{kube-proxy,kubelet}"
+  ssh -o StrictHostKeyChecking=no admin@$host "sudo mkdir /var/lib/{kube-proxy,kubelet}"
 
   scp -o StrictHostKeyChecking=no kube-proxy.kubeconfig admin@$host:/tmp/kubeconfig
   ssh -o StrictHostKeyChecking=no admin@$host sudo mv /tmp/kubeconfig /var/lib/kube-proxy/
@@ -175,15 +174,15 @@ for host in node-0 node-1; do
 
 done
 
-scp admin.kubeconfig kube-controller-manager.kubeconfig kube-scheduler.kubeconfig admin@server:/tmp
+scp -o StrictHostKeyChecking=no admin.kubeconfig kube-controller-manager.kubeconfig kube-scheduler.kubeconfig admin@server:/tmp
 
 #Generate encryption config
 export ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
 envsubst < basic-aws-kubernetes-cluster/encryption-config.yaml > encryption-config.yaml
-scp encryption-config.yaml admin@server:/tmp
+scp -o StrictHostKeyChecking=no encryption-config.yaml admin@server:/tmp
 
 #Bootstrap etcd on server
-scp downloads/etcd-v3.4.27-linux-arm64.tar.gz units/etcd.service admin@server:/tmp
+scp -o StrictHostKeyChecking=no downloads/etcd-v3.4.27-linux-arm64.tar.gz units/etcd.service admin@server:/tmp
 ssh -o StrictHostKeyChecking=no admin@server sudo tar -xvf etcd-v3.4.27-linux-arm64.tar.gz
 ssh -o StrictHostKeyChecking=no admin@server sudo mv /tmp/etcd-v3.4.27-linux-arm64/etcd* /usr/local/bin/
 ssh -o StrictHostKeyChecking=no admin@server sudo mkdir -p /etc/etcd /var/lib/etcd
