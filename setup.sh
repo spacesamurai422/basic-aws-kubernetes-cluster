@@ -192,10 +192,10 @@ ssh -o StrictHostKeyChecking=no admin@server sudo mv /tmp/etcd.service /etc/syst
 ssh -o StrictHostKeyChecking=no admin@server sudo systemctl daemon-reload
 ssh -o StrictHostKeyChecking=no admin@server sudo systemctl enable etcd
 ssh -o StrictHostKeyChecking=no admin@server sudo systemctl start etcd
-etcdctl member list
+ssh -o StrictHostKeyChecking=no admin@server sudo etcdctl member list
 
 #Bootstrap the control plane server - api server, scheduler, controller manager
-scp \
+scp -o StrictHostKeyChecking=no \
   downloads/kube-apiserver \
   downloads/kube-controller-manager \
   downloads/kube-scheduler \
@@ -243,7 +243,7 @@ for host in node-0 node-1; do
 done
 
 for host in node-0 node-1; do
-  scp \
+  scp -o StrictHostKeyChecking=no \
     downloads/runc.arm64 \
     downloads/crictl-v1.28.0-linux-arm.tar.gz \
     downloads/cni-plugins-linux-arm64-v1.3.0.tgz \
@@ -289,3 +289,20 @@ done
 
 #Verify node status
 kubectl get nodes --kubeconfig /tmp/admin.kubeconfig
+
+#Pod network setup
+SERVER_IP=$(grep server machines.txt | cut -d " " -f 1)
+NODE_0_IP=$(grep node-0 machines.txt | cut -d " " -f 1)
+NODE_0_SUBNET=$(grep node-0 machines.txt | cut -d " " -f 4)
+NODE_1_IP=$(grep node-1 machines.txt | cut -d " " -f 1)
+NODE_1_SUBNET=$(grep node-1 machines.txt | cut -d " " -f 4)
+ssh -o StrictHostKeyChecking=no admin@server <<EOF
+  sudo ip route add ${NODE_0_SUBNET} via ${NODE_0_IP}
+  sudo ip route add ${NODE_1_SUBNET} via ${NODE_1_IP}
+EOF
+ssh -o StrictHostKeyChecking=no admin@node-0 <<EOF
+  sudo ip route add ${NODE_1_SUBNET} via ${NODE_1_IP}
+EOF
+ssh -o StrictHostKeyChecking=no admin@node-1 <<EOF
+  sudo ip route add ${NODE_0_SUBNET} via ${NODE_0_IP}
+EOF
